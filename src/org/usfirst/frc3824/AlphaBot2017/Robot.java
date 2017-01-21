@@ -81,6 +81,10 @@ public class Robot extends IterativeRobot {
 
     public void disabledPeriodic() {
         Scheduler.getInstance().run();
+        
+        // update the smartdash board data about the image processing
+        RPi.updateSmartDashboardData();
+        RPi.updateSmartDashboardActive();
     }
 
     public void autonomousInit() {
@@ -93,15 +97,10 @@ public class Robot extends IterativeRobot {
      */
     public void autonomousPeriodic() {
         Scheduler.getInstance().run();
-        try {
-	        SmartDashboard.putString("Target", new String("Idx: " + RPi.getTarget().getFrameIndex() 
-					+ "  Type: " + RPi.getTarget().getTargetType()
-					+ "  Center: "  + RPi.getTarget().getXCenter() + ", "  + RPi.getTarget().getYCenter()
-					+ "  Height: "  + RPi.getTarget().getHeight()) );
-        }
-        catch (Exception e) {
-        	
-        }
+        
+        // update the smartdash board data about the image processing
+        RPi.updateSmartDashboardData();
+        RPi.updateSmartDashboardActive();
     }
 
     public void teleopInit() {
@@ -117,15 +116,10 @@ public class Robot extends IterativeRobot {
      */
     public void teleopPeriodic() {
         Scheduler.getInstance().run();
-        try {
-	        SmartDashboard.putString("Target", new String("Idx: " + RPi.getTarget().getFrameIndex() 
-					+ "  Type: " + RPi.getTarget().getTargetType()
-					+ "  Center: "  + RPi.getTarget().getXCenter() + ", "  + RPi.getTarget().getYCenter()
-					+ "  Height: "  + RPi.getTarget().getHeight()) );
-        }
-        catch (Exception e) {
-        	
-        }
+        
+        // update the smartdash board data about the image processing
+        RPi.updateSmartDashboardData();
+        RPi.updateSmartDashboardActive();
     }
 
     /**

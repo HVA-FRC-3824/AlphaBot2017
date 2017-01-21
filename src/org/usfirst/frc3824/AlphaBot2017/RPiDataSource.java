@@ -1,6 +1,9 @@
 package org.usfirst.frc3824.AlphaBot2017;
 import java.lang.Thread;
 import java.net.*;
+
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+
 import java.io.*;
 
 /*
@@ -13,7 +16,8 @@ public class RPiDataSource {
 	private int bufLength = 256;
 	private boolean running = false;
 	private Target lastTarget;
-					
+	private boolean mActive = false;
+	
 	/*
 	 * Private Constructor to support a singleton object
 	 */
@@ -40,6 +44,7 @@ public class RPiDataSource {
 		
 		try{
 			socket = new DatagramSocket(5800);
+			socket.setSoTimeout(500);    // receive packet will timeout if no packet is received for 500ms
 			System.out.println("RPiDataSource listening on port: " + socket.getLocalPort());
 		} catch (java.io.IOException e) {
 			System.err.println("Could not create datagram socket.");
@@ -57,18 +62,26 @@ public class RPiDataSource {
 				
 				// receive a packet of data
 				packet = new DatagramPacket(buf, bufLength);
-				socket.receive(packet);
-				address = packet.getAddress();
-				port = packet.getPort();
-				
-				System.out.println("Received data from IP address: " + address + " port: " + port);
-				
-				// Store the data locally
-				lastTarget = new Target(buf);
-				
-				// send a response - not wanting to send a response at the moment
-				// packet = new DatagramPacket(buf, buf.length, address, port);
-				// socket.send(packet);
+				try
+				{
+					socket.receive(packet);
+					address = packet.getAddress();
+					port = packet.getPort();
+					
+					System.out.println("Received data from IP address: " + address + " port: " + port);
+					
+					// Store the data locally
+					lastTarget = new Target(buf);
+					
+					mActive = true;
+					// send a response - not wanting to send a response at the moment
+					// packet = new DatagramPacket(buf, buf.length, address, port);
+					// socket.send(packet);
+				}
+				catch (SocketTimeoutException e)
+				{
+					mActive = false;
+				}
 			} catch (IOException e) {
 				System.err.println("IOException:  " + e);
 				running = false;
@@ -81,6 +94,39 @@ public class RPiDataSource {
 	public Target getTarget()
 	{
 		return lastTarget;
+	}
+	
+	public boolean isActive()
+	{
+		return mActive;
+	}
+	
+	public void updateSmartDashboardData()
+	{
+        try {
+        	if(getTarget().isValid()){
+		        SmartDashboard.putString("Target", new String("Idx: " + getTarget().getFrameIndex() 
+						+ "  Type: " + getTarget().getTargetType()
+						+ "  Center: "  + getTarget().getXCenter() + ", "  + getTarget().getYCenter()
+						+ "  Height: "  + getTarget().getHeight()) );
+        	}
+        	else {
+        		SmartDashboard.putString("NO VALID TARGET", null);
+        	}
+        }
+        catch (Exception e) {
+        	
+        }		
+	}
+	
+	public void updateSmartDashboardActive()
+	{
+		try {
+			SmartDashboard.putBoolean("RPiActive", isActive());
+		}
+		catch (Exception e) {
+			
+		}
 	}
 }
 
