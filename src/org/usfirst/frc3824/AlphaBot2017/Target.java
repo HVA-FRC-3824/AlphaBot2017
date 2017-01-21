@@ -33,11 +33,11 @@ public class Target {
 	
 	Target(byte[] udpBuf)
 	{
-		mFrameIndex = ((int) udpBuf[0] * 256) + ((int) udpBuf[1]);
-		mTargetType = (int) udpBuf[14];
-		mXCenter = (double) (((int) udpBuf[2] * 256) + ((int) udpBuf[3])) + ( (double) (((int) udpBuf[8] * 256) + ((int) udpBuf[9])) / 10.0 );
-		mYCenter = (double) (((int) udpBuf[4] * 256) + ((int) udpBuf[5])) + ( (double) (((int) udpBuf[10] * 256) + ((int) udpBuf[11])) / 10.0 );
-		mHeight = (double) (((int) udpBuf[6] * 256) + ((int) udpBuf[7])) + ( (double) (((int) udpBuf[12] * 256) + ((int) udpBuf[13])) / 10.0 );
+		mFrameIndex = ((int) (udpBuf[0] & 0xFF) * 256) + ((int) (udpBuf[1] & 0xFF) );	// treat the low byte as unsigned
+		mTargetType = (int) (udpBuf[14] & 0xFF);
+		mXCenter = (double) (((int) udpBuf[2] * 256) + ((int) (udpBuf[3]) & 0xFF) ) + ( (double) (((int) udpBuf[8] * 256) + ((int) (udpBuf[9]) & 0xFF) ) / 10.0 );
+		mYCenter = (double) (((int) udpBuf[4] * 256) + ((int) (udpBuf[5]) & 0xFF) ) + ( (double) (((int) udpBuf[10] * 256) + ((int) (udpBuf[11]) & 0xFF) ) / 10.0 );
+		mHeight = (double) (((int) udpBuf[6] * 256) + ((int) (udpBuf[7]) & 0xFF) ) + ( (double) (((int) udpBuf[12] * 256) + ((int) (udpBuf[13]) & 0xFF) ) / 10.0 );
 	}
 		
 	int getFrameIndex()
