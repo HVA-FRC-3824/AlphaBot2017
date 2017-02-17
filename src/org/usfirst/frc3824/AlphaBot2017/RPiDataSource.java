@@ -17,6 +17,10 @@ public class RPiDataSource {
 	private boolean running = false;
 	private Target lastTarget;
 	private boolean mActive = false;
+	private InetAddress RpiAddress;
+	private boolean tcpActive = false;
+	private PrintWriter output;
+	private Socket tcpSocket;
 	
 	/*
 	 * Private Constructor to support a singleton object
@@ -28,6 +32,94 @@ public class RPiDataSource {
 	private static RPiDataSource instance = new RPiDataSource();
 	public static RPiDataSource getInstance() {return instance;}
 	
+	public boolean setValue(String name, int value) {
+		
+		boolean result;
+		String data;
+		
+		char buf[];
+		if(tcpActive)
+		{
+			data = "v".concat("xx");
+			data.concat(name);
+			buf = data.toCharArray();
+			buf[1] = (char) ((value >> 8) & 0xFF);
+			buf[2] = (char) ((value >> 0) & 0xFF);
+			output.write(buf);;
+			result = true;
+		}
+		else
+		{
+			result = false;
+		}
+		
+		return result;
+	}
+	
+	public boolean saveFrames(int frameNum, int preCount, int postCount) {
+		
+		boolean result;
+		
+		char buf[];
+		if(tcpActive)
+		{
+			buf = "f".toCharArray();
+			buf[1] = (char) ((frameNum >> 8) & 0xFF);
+			buf[2] = (char) ((frameNum >> 0) & 0xFF);
+			buf[3] = (char) ((preCount >> 8) & 0xFF);
+			buf[4] = (char) ((preCount >> 0) & 0xFF);
+			buf[5] = (char) ((postCount >> 8) & 0xFF);
+			buf[6] = (char) ((postCount >> 0) & 0xFF);
+			output.write(buf);;
+			result = true;
+		}
+		else
+		{
+			result = false;
+		}
+		
+		return result;
+	}
+
+	public boolean rereadConfig()
+	{
+		boolean result;
+		char buf[];
+		
+		if(tcpActive)
+		{
+			buf = "r".toCharArray();
+			output.write(buf);;
+			result = true;
+		}
+		else
+		{
+			result = false;
+		}
+		
+		return result;
+		
+	}
+	
+	public boolean saveConfig()
+	{
+		boolean result;
+		char buf[];
+		
+		if(tcpActive)
+		{
+			buf = "s".toCharArray();
+			output.write(buf);;
+			result = true;
+		}
+		else
+		{
+			result = false;
+		}
+		
+		return result;
+		
+	}
 	
 	public boolean start() {
 		new Thread(null, ()->{
@@ -35,6 +127,10 @@ public class RPiDataSource {
 		}, "RpiDataSource").start();
 		
 		return true;
+	}
+	
+	public void stop(){
+		running = false;
 	}
 	
 	/*
@@ -57,7 +153,6 @@ public class RPiDataSource {
 			try {
 				byte[] buf = new byte[bufLength];
 				DatagramPacket packet;
-				InetAddress address;
 				int port;
 				
 				// receive a packet of data
@@ -65,15 +160,27 @@ public class RPiDataSource {
 				try
 				{
 					socket.receive(packet);
-					address = packet.getAddress();
+					RpiAddress = packet.getAddress();
 					port = packet.getPort();
 					
-					System.out.println("Received data from IP address: " + address + " port: " + port);
+					System.out.println("Received data from IP address: " + RpiAddress + " port: " + port);
 					
 					// Store the data locally
 					lastTarget = new Target(buf);
 					
 					mActive = true;
+					
+					if(!tcpActive)
+					{
+						try{
+						    tcpSocket = new Socket(RpiAddress, 5801);
+			                output = new PrintWriter(tcpSocket.getOutputStream(), true);
+
+						    tcpActive = true;
+						} catch (java.io.IOException e) {
+							System.err.println("Could not create the TCP socket");
+						}
+					}
 					// send a response - not wanting to send a response at the moment
 					// packet = new DatagramPacket(buf, buf.length, address, port);
 					// socket.send(packet);
@@ -88,6 +195,11 @@ public class RPiDataSource {
 			}
 		}
 		
+		try {
+			tcpSocket.close();
+		} catch (IOException e) {
+			System.err.println("Failed to close TCP socket");
+		}
 		socket.close();
 	}
 	
